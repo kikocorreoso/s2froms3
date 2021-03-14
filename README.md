@@ -164,6 +164,7 @@ The previous code will show:
 ## TO-DO
 
 * Use threading to download the files.
+* Add entry point / cli command.
 
 ## Issues / Feature requests
 

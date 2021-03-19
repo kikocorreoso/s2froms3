@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.append(str(Path('.', 'src')))
 
 import pytest
-from s2froms3 import download_S2
+from s2froms3 import download_S2 # type: ignore
 from s2froms3 import utils
 
 

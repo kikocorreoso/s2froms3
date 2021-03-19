@@ -2,12 +2,12 @@
 
 import json
 import datetime as dt
-from typing import Union, Iterable
+from typing import Union, Iterable, List
 from pathlib import Path
 
 
-import mgrs
-import s3fs
+import mgrs # type: ignore
+import s3fs # type: ignore
 
 from .utils import _iter_dates
 from .products import Properties
@@ -21,7 +21,7 @@ def download_S2(
     what: Union[str, Iterable[str]],
     cloud_cover_le: float = 50,
     folder: Union[str, Path] = Path.home()
-):
+) -> List[str]:
     '''Download Sentinel 2 COG (Cloud Optimized GeoTiff) images from Amazon S3. 
     
     The dataset on AWS contains all of the scenes in the original Sentinel-2 
@@ -73,6 +73,7 @@ def download_S2(
     start_date = dt.date(start_date. year, start_date.month, start_date.day)
     end_date = dt.date(end_date. year, end_date.month, end_date.day)
     contents = []
+    path: Union[str, Path]
     for y, m in _iter_dates(start_date, end_date):
         path = f'sentinel-cogs/sentinel-s2-l2a-cogs/{number}/{a}/{b}/{y}/{m}'
         _contents = fs.ls(path)
@@ -87,7 +88,7 @@ def download_S2(
             if cloud_cover_le >= cc and start_date <= date <= end_date:
                 for w in what:
                     path = _c + f'/{w}.tif'
-                    contents.append(path)
+                    contents.append(str(path))
                     with fs.open(path, 'rb') as f:
                         data = f.read()
                     path = Path(folder) / f'{name}_{w}.tif'

@@ -5,6 +5,7 @@ products.
 """
 
 from enum import Enum, unique
+from typing import Dict, Any
 
 @unique
 class Properties(Enum):
@@ -25,7 +26,7 @@ class Properties(Enum):
     WVP = 'WVP'
     SCL = 'SCL'
     
-    def describe(self): 
+    def describe(self) -> Dict[str, Any]: 
         properties = {
             'TCI': {
                 'resolution': 10,

@@ -6,11 +6,12 @@ This module contains some utils used mainly by the library itself.
 
 from typing import Union
 import datetime as dt
+from typing import Iterator, Tuple
 
 def _iter_dates(
     start_date: Union[dt.date, dt.datetime], 
     end_date: Union[dt.date, dt.datetime]
-):
+) -> Iterator[Tuple[int, int]]:
     '''Helper function to create a (year, month) iterator from start_date to
     end_date.'''
     # REF: https://stackoverflow.com/a/5734564

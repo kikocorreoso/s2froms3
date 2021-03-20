@@ -4,6 +4,10 @@ import json
 import datetime as dt
 from typing import Union, Iterable, List
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+from itertools import cycle
+from time import sleep
+
 
 import mgrs # type: ignore
 import s3fs # type: ignore
@@ -20,6 +24,7 @@ def download_S2(
     what: Union[str, Iterable[str]],
     cloud_cover_le: float = 50,
     folder: Union[str, Path] = Path.home(),
+    workers: int = 4,
     use_ssl: bool = True
 ) -> List[str]:
     '''Download Sentinel 2 COG (Cloud Optimized GeoTiff) images from Amazon S3. 
@@ -51,9 +56,11 @@ def download_S2(
     folder: str or Path
         Where to download the data. The folder must exist. Default value is 
         the home directory of the user.
+    workers: int
+        Number of parallel downloads using threading. Default value is 4.
     use_ssl: bool
         Whether to use SSL in connections to S3; may be faster without, but 
-        insecure. Default (and recommended) value is True.
+        insecure. Default (and recommended) values is `True`.
     
     Returns
     -------
@@ -75,8 +82,10 @@ def download_S2(
     number, a, b = coord[:-3], coord[-3:-2], coord[-2:]
     start_date = dt.date(start_date. year, start_date.month, start_date.day)
     end_date = dt.date(end_date. year, end_date.month, end_date.day)
-    contents = []
+    rpaths = []
+    lpaths = []
     path: Union[str, Path]
+    # Get the remote and local paths
     for y, m in _iter_dates(start_date, end_date):
         path = f'sentinel-cogs/sentinel-s2-l2a-cogs/{number}/{a}/{b}/{y}/{m}'
         _contents = fs.ls(path)
@@ -91,10 +100,16 @@ def download_S2(
             if cloud_cover_le >= cc and start_date <= date <= end_date:
                 for w in what:
                     path = _c + f'/{w}.tif'
-                    contents.append(str(path))
-                    with fs.open(path, 'rb') as f:
-                        data = f.read()
-                    path = Path(folder) / f'{name}_{w}.tif'
-                    with open(path, 'wb') as f:
-                        f.write(data)
-    return sorted(contents)
+                    rpaths.append(str(path))
+                    lpaths.append(str(Path(folder) / f'{name}_{w}.tif'))
+                    
+    def get_file(rpath: Union[str, Path], lpath: Union[str, Path]) -> None:
+        fs.download(rpath, lpath)
+    
+    executor = ThreadPoolExecutor(max_workers=workers)
+    ex = [executor.submit(get_file, rp, lp) for rp, lp in zip(rpaths, lpaths)]
+    cy = cycle(r'-\|/')
+    while not all([exx.done() for exx in ex]):
+        print("Downloading data " + next(cy), end='\r')
+        sleep(0.1)
+    return sorted(rpaths)

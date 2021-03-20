@@ -8,7 +8,7 @@ from typing import Union
 import datetime as dt
 from typing import Iterator, Tuple
 
-import mgrs
+import mgrs # type: ignore
 
 def _iter_dates(
     start_date: Union[dt.date, dt.datetime], 

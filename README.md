@@ -194,7 +194,7 @@ download also the COGs in the East, the Northeast and/or the North.
 
 ## TO-DO
 
-* Use threading to download the files (done :heavy_check_mark:).
+* ~~Use threading to download the files~~ (done :heavy_check_mark:).
 * Add entry point / cli command.
 
 ## Issues / Feature requests

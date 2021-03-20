@@ -161,6 +161,37 @@ The previous code will show:
  'sentinel-cogs/sentinel-s2-l2a-cogs/32/P/PS/2020/8/S2B_32PPS_20200812_0_L2A/B04.tif']
 ```
 
+Sometimes the location you have in mind is in a border of a tile (COG) and
+the scene you want to analyze is not complete. You can check if the location
+is close to a border/corner using the following function:
+
+```python
+from s2froms3 import point_in_tile
+
+print(s2froms3.point_in_tile(2.98279, 39.73887))
+```
+
+The previous code will show
+
+```
+
++ + + + + + + + + + + 
++                 O + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++ + + + + + + + + + + 
+
+```
+
+This way you can better understand if, in this case, you will need to 
+download also the COGs in the East, the Northeast and/or the North.
+
 ## TO-DO
 
 * Use threading to download the files.

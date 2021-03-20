@@ -5,7 +5,6 @@ import datetime as dt
 from typing import Union, Iterable, List
 from pathlib import Path
 
-
 import mgrs # type: ignore
 import s3fs # type: ignore
 
@@ -20,7 +19,8 @@ def download_S2(
     end_date: Union[dt.date, dt.datetime], 
     what: Union[str, Iterable[str]],
     cloud_cover_le: float = 50,
-    folder: Union[str, Path] = Path.home()
+    folder: Union[str, Path] = Path.home(),
+    use_ssl: bool = True
 ) -> List[str]:
     '''Download Sentinel 2 COG (Cloud Optimized GeoTiff) images from Amazon S3. 
     
@@ -51,6 +51,9 @@ def download_S2(
     folder: str or Path
         Where to download the data. The folder must exist. Default value is 
         the home directory of the user.
+    use_ssl: bool
+        Whether to use SSL in connections to S3; may be faster without, but 
+        insecure. Default (and recommended) value is True.
     
     Returns
     -------
@@ -66,7 +69,7 @@ def download_S2(
     for w in what:
         if w.upper() not in [item.value for item in Properties]:
             raise ValueError(f'{w} is not a valid product')
-    fs = s3fs.S3FileSystem(anon=True, use_ssl=False)
+    fs = s3fs.S3FileSystem(anon=True, use_ssl=use_ssl)
     m = mgrs.MGRS()
     coord = m.toMGRS(lat, lon, MGRSPrecision=0)
     number, a, b = coord[:-3], coord[-3:-2], coord[-2:]

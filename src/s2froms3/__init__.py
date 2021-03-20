@@ -3,6 +3,7 @@
 
 from .download import download_S2
 from . import products
+from .utils import point_in_tile
 
 __version__ = '0.1.0'
 

@@ -38,3 +38,63 @@ def test_iterdates():
     start = dt.date(2000, 1, 1)
     end = dt.date(2000, 12, 1)
     assert len(list(utils._iter_dates(start, end))) == 12
+    
+def test_point_in_tile_majorca():
+    # NE corner in Majorca
+    lon = 2.98279
+    lat = 39.73887
+    res = utils.point_in_tile(lon, lat)
+    expected = '''
++ + + + + + + + + + + 
++                 O + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++ + + + + + + + + + + 
+'''
+    assert res == expected
+
+def test_point_in_tile_reykjavik():
+    # Reykjavik (close to the South border of the tile)
+    lon = -21.90399
+    lat = 64.13817
+    res = utils.point_in_tile(lon, lat)
+    expected = '''
++ + + + + + + + + + + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++         O         + 
++ + + + + + + + + + + 
+'''
+    assert res == expected
+
+def test_point_in_tile_morrosandiego():
+    # Centered in the tile (Tierra del Fuego)
+    lon = -65.16747
+    lat = -54.65636
+    res = utils.point_in_tile(lon, lat)
+    expected = '''
++ + + + + + + + + + + 
++                   + 
++                   + 
++                   + 
++                   + 
++                   + 
++           O       + 
++                   + 
++                   + 
++                   + 
++ + + + + + + + + + + 
+'''
+    assert res == expected

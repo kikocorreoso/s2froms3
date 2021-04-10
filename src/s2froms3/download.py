@@ -2,38 +2,40 @@
 
 import json
 import datetime as dt
-from typing import Union, Iterable, List
+from typing import Union, Iterable, List, Optional
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from itertools import cycle
 from time import sleep
 
 
-import mgrs # type: ignore
-import s3fs # type: ignore
+import mgrs  # type: ignore
+import s3fs  # type: ignore
 
 from .utils import _iter_dates
 from .products import Properties
 
 
 def download_S2(
-    lon: float, 
-    lat: float, 
-    start_date: Union[dt.date, dt.datetime], 
-    end_date: Union[dt.date, dt.datetime], 
+    lon: float,
+    lat: float,
+    start_date: Union[dt.date, dt.datetime],
+    end_date: Union[dt.date, dt.datetime],
     what: Union[str, Iterable[str]],
     cloud_cover_le: float = 50,
     folder: Union[str, Path] = Path.home(),
     workers: int = 4,
-    use_ssl: bool = True
+    use_ssl: bool = True,
+    also: Optional[List[str]] = None,
+    download: bool = True,
 ) -> List[str]:
-    '''Download Sentinel 2 COG (Cloud Optimized GeoTiff) images from Amazon S3. 
-    
-    The dataset on AWS contains all of the scenes in the original Sentinel-2 
-    Public Dataset and will grow as that does. L2A data are available from 
-    April 2017 over wider Europe region and globally since December  2018. Read 
+    """Download Sentinel 2 COG (Cloud Optimized GeoTiff) images from Amazon S3.
+
+    The dataset on AWS contains all of the scenes in the original Sentinel-2
+    Public Dataset and will grow as that does. L2A data are available from
+    April 2017 over wider Europe region and globally since December  2018. Read
     more at the url https://registry.opendata.aws/sentinel-2-l2a-cogs/
-    
+
     Parameters
     ----------
     lon: float
@@ -54,62 +56,122 @@ def download_S2(
         it indicates the allowed cloud cover on the image must be lower or
         equal to 10%. Default value is 50 (%).
     folder: str or Path
-        Where to download the data. The folder must exist. Default value is 
+        Where to download the data. The folder must exist. Default value is
         the home directory of the user.
     workers: int
         Number of parallel downloads using threading. Default value is 4.
     use_ssl: bool
-        Whether to use SSL in connections to S3; may be faster without, but 
-        insecure. Default (and recommended) values is `True`.
-    
+        Whether to use SSL in connections to S3; may be faster without, but
+        insecure. Default (and recommended) value is `True`.
+    also: list or None
+        A list detailing if you want to download other COG files in the
+        borders. Valid values are 'N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'.
+        See below where 'X' is the original target.
+          +-----+-----+-----+
+          |NW   |  N  |   NE|
+          |     |     |     |
+          |     |     |     |
+          +-----+-----+-----+
+          |     |     |     |
+          |W    |  X  |    E|
+          |     |     |     |
+          +-----+-----+-----+
+          |     |     |     |
+          |     |     |     |
+          |SW   |  S  |   SE|
+          +-----+-----+-----+
+    download: bool
+        Wheter you want to download the COGs or not. Default value is `True`.
+
     Returns
     -------
     list
         A list with the paths of the downloaded files.
-    '''
+    """
+    _also = {
+        "N": {"x": 0, "y": 150_000},
+        "NE": {"x": 150_000, "y": 150_000},
+        "E": {"x": 150_000, "y": 0},
+        "SE": {"x": 150_000, "y": -150_000},
+        "S": {"x": 0, "y": -150_000},
+        "SW": {"x": -150_000, "y": -150_000},
+        "W": {"x": -150_000, "y": 0},
+        "NW": {"x": -150_000, "y": 150_000},
+    }
     if start_date > end_date:
-        raise ValueError(
-            '`start_date` has to be lower or equal than `end_date`'
-        )
+        raise ValueError("`start_date` has to be lower or equal than `end_date`")
     if isinstance(what, str):
         what = [what]
     for w in what:
         if w.upper() not in [item.value for item in Properties]:
-            raise ValueError(f'{w} is not a valid product')
+            raise ValueError(f"{w} is not a valid product")
     fs = s3fs.S3FileSystem(anon=True, use_ssl=use_ssl)
-    m = mgrs.MGRS()
-    coord = m.toMGRS(lat, lon, MGRSPrecision=0)
-    number, a, b = coord[:-3], coord[-3:-2], coord[-2:]
-    start_date = dt.date(start_date. year, start_date.month, start_date.day)
-    end_date = dt.date(end_date. year, end_date.month, end_date.day)
+    start_date = dt.date(start_date.year, start_date.month, start_date.day)
+    end_date = dt.date(end_date.year, end_date.month, end_date.day)
     rpaths = []
     lpaths = []
     path: Union[str, Path]
-    # Get the remote and local paths
-    for y, m in _iter_dates(start_date, end_date):
-        path = f'sentinel-cogs/sentinel-s2-l2a-cogs/{number}/{a}/{b}/{y}/{m}'
+    m = mgrs.MGRS()
+
+    # Get the remote and local paths for the original target
+    coord = m.toMGRS(lat, lon, MGRSPrecision=0)
+    number, a, b = coord[:-3], coord[-3:-2], coord[-2:]
+    for yy, mm in _iter_dates(start_date, end_date):
+        path = f"sentinel-cogs/sentinel-s2-l2a-cogs/{number}/{a}/{b}/{yy}/{mm}"
         _contents = fs.ls(path)
         for _c in _contents:
-            name = _c.split('/')[-1]
-            info = _c + '/' + name + '.json'
-            with fs.open(info, 'r') as f:
+            name = _c.split("/")[-1]
+            info = _c + "/" + name + ".json"
+            with fs.open(info, "r") as f:
                 info = json.load(f)
-            date_str = name.split('_')[2]
-            cc = info['properties']['eo:cloud_cover']
-            date = dt.datetime.strptime(date_str, '%Y%m%d').date()
+            date_str = name.split("_")[2]
+            cc = info["properties"]["eo:cloud_cover"]
+            date = dt.datetime.strptime(date_str, "%Y%m%d").date()
             if cloud_cover_le >= cc and start_date <= date <= end_date:
                 for w in what:
-                    path = _c + f'/{w}.tif'
+                    path = _c + f"/{w}.tif"
                     rpaths.append(str(path))
-                    lpaths.append(str(Path(folder) / f'{name}_{w}.tif'))
-                    
+                    lpaths.append(str(Path(folder) / f"{name}_{w}.tif"))
+
+    # Get the remote and local paths for the adjacent COGS to the target,
+    # if required
+    if also is None:
+        also = []
+    for al in also:
+        al = al.upper()
+        if al not in list(_also.keys()):
+            raise ValueError(f'"{al}" is not a valid value for `also` keyword')
+        z, hem, x, y = m.MGRSToUTM(coord)
+        x += _also[al]["x"]
+        y += _also[al]["y"]
+        _coord = m.UTMToMGRS(z, hem, x, y, MGRSPrecision=0)
+        number, a, b = _coord[:-3], _coord[-3:-2], _coord[-2:]
+        for yy, mm in _iter_dates(start_date, end_date):
+            path = "sentinel-cogs/sentinel-s2-l2a-cogs/" f"{number}/{a}/{b}/{yy}/{mm}"
+            _contents = fs.ls(path)
+            for _c in _contents:
+                name = _c.split("/")[-1]
+                info = _c + "/" + name + ".json"
+                with fs.open(info, "r") as f:
+                    info = json.load(f)
+                date_str = name.split("_")[2]
+                cc = info["properties"]["eo:cloud_cover"]
+                date = dt.datetime.strptime(date_str, "%Y%m%d").date()
+                if cloud_cover_le >= cc and start_date <= date <= end_date:
+                    for w in what:
+                        path = _c + f"/{w}.tif"
+                        rpaths.append(str(path))
+                        lpaths.append(str(Path(folder) / f"{name}_{w}_{al}.tif"))
+
     def get_file(rpath: Union[str, Path], lpath: Union[str, Path]) -> None:
         fs.download(rpath, lpath)
-    
-    executor = ThreadPoolExecutor(max_workers=workers)
-    ex = [executor.submit(get_file, rp, lp) for rp, lp in zip(rpaths, lpaths)]
-    cy = cycle(r'-\|/')
-    while not all([exx.done() for exx in ex]):
-        print("Downloading data " + next(cy), end='\r')
-        sleep(0.1)
+
+    if download:
+        executor = ThreadPoolExecutor(max_workers=workers)
+        ex = [executor.submit(get_file, rp, lp) for rp, lp in zip(rpaths, lpaths)]
+        cy = cycle(r"-\|/")
+        while not all([exx.done() for exx in ex]):
+            print("Downloading data " + next(cy), end="\r")
+            sleep(0.1)
+
     return sorted(rpaths)

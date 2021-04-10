@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Utilities to download Sentinel-2 COGS from S3"""
 
 import json
 import datetime as dt

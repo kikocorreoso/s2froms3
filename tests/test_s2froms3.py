@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""Tests for s2froms3 library"""
 
 import datetime as dt
 import sys
@@ -107,28 +108,28 @@ def test_point_in_tile_morrosandiego():
 
 def test_also():
     paths = download_S2(
-        3.475, 
-        39.73, 
-        dt.date(2020, 7, 1), 
-        dt.date(2020, 7, 10), 
-        'TCI', 
-        cloud_cover_le=25, 
-        also=['N', 'ne', 'E'], 
-        download=False
+        3.475,
+        39.73,
+        dt.date(2020, 7, 1),
+        dt.date(2020, 7, 10),
+        "TCI",
+        cloud_cover_le=25,
+        also=["N", "ne", "E"],
+        download=False,
     )
     locations = ["".join(p.split("/")[2:5]) for p in paths]
     assert len(set(locations)) > 1
-    
+
 
 def test_also_valueerror():
     with pytest.raises(ValueError):
         download_S2(
-            3.475, 
-            39.73, 
-            dt.date(2020, 7, 1), 
-            dt.date(2020, 7, 10), 
-            'TCI', 
-            cloud_cover_le=25, 
-            also=['N', 'ne', 'Fresa'], 
-            download=False
+            3.475,
+            39.73,
+            dt.date(2020, 7, 1),
+            dt.date(2020, 7, 10),
+            "TCI",
+            cloud_cover_le=25,
+            also=["N", "ne", "Fresa"],
+            download=False,
         )

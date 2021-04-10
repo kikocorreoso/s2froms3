@@ -1,5 +1,5 @@
 # s2froms3
-Get Sentinel-2 (Cloud Optimized Geotiffs) COG files from AWS S3.
+Get Sentinel-2 Cloud Optimized Geotiffs (COG) files from AWS S3.
 
 ## Installation
 
@@ -192,10 +192,32 @@ The previous code will show
 This way you can better understand if, in this case, you will need to 
 download also the COGs in the East, the Northeast and/or the North.
 
+if you want to download also COG files adjacent to the target location
+you could use the `also` option. For instance, in the previous case you
+maybe also want to download the COGs located to the East (E), to the North
+(N) and to the Northeast (NE). You could do so with the following code:
+
+```python
+lon, lat = 2.98279, 39.73887
+
+downloaded = s2froms3.download_S2(
+    lon=lon,
+    lat=lat,
+    start_date=start_date,
+    end_date=end_date,
+    what=what,
+    cloud_cover_le=cc,
+    folder=folder,
+    also=['N', 'NE', 'E']
+)
+```
+
+Now, you will get several COGs but also the COGs located to the N, NE and E.
+
 ## TO-DO
 
 * ~~Use threading to download the files~~ (done :heavy_check_mark:).
-* Add entry point / cli command.
+* Add entry point / cli command (I'm thinking about it. Let's see).
 
 ## Issues / Feature requests
 

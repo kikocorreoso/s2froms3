@@ -228,3 +228,16 @@ a discussion [here](https://github.com/kikocorreoso/s2froms3/discussions).
 
 Any interaction you have with me or others must be guided by the highest 
 standards of politeness and respect.
+
+## Releases
+
+version 0.2.0
+
+* Added function `point_in_tile` to check were is located the requested location within the COG tile.
+* Added `ssl_option` keyword in `download_S2` function.
+* Use threading to download COG files.
+* Added `also` and `download` keywords in `download_S2` function.
+
+version 0.1.0
+
+* Initial version with basic machinery to download Sentinel-2 COGs from S3.

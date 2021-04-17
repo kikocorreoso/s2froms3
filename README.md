@@ -233,7 +233,7 @@ standards of politeness and respect.
 
 version 0.2.0
 
-* Added function `point_in_tile` to check were is located the requested location within the COG tile.
+* Added function `point_in_tile` to check where is located the requested location within the COG tile.
 * Added `ssl_option` keyword in `download_S2` function.
 * Use threading to download COG files.
 * Added `also` and `download` keywords in `download_S2` function.

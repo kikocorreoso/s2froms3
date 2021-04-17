@@ -214,6 +214,8 @@ downloaded = s2froms3.download_S2(
 
 Now, you will get several COGs but also the COGs located to the N, NE and E.
 
+You can see a practical example in the notebooks folder of this repo (in spanish and english).
+
 ## TO-DO
 
 * ~~Use threading to download the files~~ (done :heavy_check_mark:).

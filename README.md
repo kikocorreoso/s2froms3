@@ -1,4 +1,7 @@
 # s2froms3
+
+[THIS REPOSITORY HAS BEEN MIGRATED TO [CODEBERG](https://codeberg.org/kikocorreoso/s2froms3)].
+
 Get Sentinel-2 Cloud Optimized Geotiffs (COG) files from AWS S3.
 
 ## Installation
